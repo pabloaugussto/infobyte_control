@@ -3,19 +3,15 @@
 import sqlite3
 import os
 
-# Pega o caminho absoluto do diretório onde o script está
-# Isso garante que o banco de dados será criado na pasta do projeto, não importa de onde você execute o script
 DIRETORIO_ATUAL = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(DIRETORIO_ATUAL, 'infobyte.db')
 
 def conectar():
-    """Conecta ao banco de dados SQLite e retorna a conexão e o cursor."""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     return conn, cursor
 
 def criar_tabela():
-    """Cria a tabela 'produtos' no banco de dados, se ela não existir."""
     try:
         conn, cursor = conectar()
         cursor.execute("""
@@ -38,7 +34,6 @@ def criar_tabela():
             conn.close()
 
 def adicionar_produto(codigo, nome, categoria, fornecedor, preco_custo, preco_venda, quantidade):
-    """Adiciona um novo produto ao banco de dados."""
     try:
         conn, cursor = conectar()
         cursor.execute("""
@@ -53,7 +48,6 @@ def adicionar_produto(codigo, nome, categoria, fornecedor, preco_custo, preco_ve
             conn.close()
 
 def buscar_todos_produtos():
-    """Busca e retorna todos os produtos da tabela."""
     produtos = []
     try:
         conn, cursor = conectar()
@@ -66,10 +60,49 @@ def buscar_todos_produtos():
             conn.close()
     return produtos
 
+# --- NOVAS FUNÇÕES ABAIXO ---
+
+def buscar_produto_por_id(id):
+    """Busca um único produto pelo seu ID."""
+    produto = None
+    try:
+        conn, cursor = conectar()
+        cursor.execute("SELECT * FROM produtos WHERE id = ?", (id,))
+        produto = cursor.fetchone() # fetchone() pega apenas um resultado
+    except sqlite3.Error as e:
+        print(f"Erro ao buscar produto por ID: {e}")
+    finally:
+        if conn:
+            conn.close()
+    return produto
+
+def atualizar_produto(id, codigo, nome, categoria, fornecedor, preco_custo, preco_venda, quantidade):
+    """Atualiza um produto existente no banco de dados."""
+    try:
+        conn, cursor = conectar()
+        cursor.execute("""
+        UPDATE produtos 
+        SET codigo = ?, nome = ?, categoria = ?, fornecedor = ?, preco_custo = ?, preco_venda = ?, quantidade = ?
+        WHERE id = ?
+        """, (codigo, nome, categoria, fornecedor, preco_custo, preco_venda, quantidade, id))
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"Erro ao atualizar produto: {e}")
+    finally:
+        if conn:
+            conn.close()
+
+def excluir_produto(id):
+    """Exclui um produto do banco de dados pelo seu ID."""
+    try:
+        conn, cursor = conectar()
+        cursor.execute("DELETE FROM produtos WHERE id = ?", (id,))
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"Erro ao excluir produto: {e}")
+    finally:
+        if conn:
+            conn.close()
 
 if __name__ == '__main__':
-    print("Iniciando configuração do banco de dados...")
     criar_tabela()
-    print("Banco de dados e tabela 'produtos' verificados/criados com sucesso!")
-   
-                   
